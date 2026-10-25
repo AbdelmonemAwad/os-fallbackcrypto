@@ -1,0 +1,23 @@
+<!--
+    SPDX-License-Identifier: BSD-2-Clause
+    Copyright (c) 2026 Abdelmonem Awad <eg2@live.com>
+-->
+<model>
+    <mount>//OPNsense/FallbackCrypto</mount>
+    <version>1.0.0</version>
+    <description>Fallback crypto</description>
+    <items>
+        <!-- early/05-fallbackcrypto reads mode out of config.xml by its element name -->
+        <general>
+            <mode type="OptionField">
+                <Required>Y</Required>
+                <Default>off</Default>
+                <OptionValues>
+                    <off>aesni only, as OPNsense ships</off>
+                    <alongside>ossl beside aesni</alongside>
+                    <only>ossl only (aesni off from the next boot)</only>
+                </OptionValues>
+            </mode>
+        </general>
+    </items>
+</model>

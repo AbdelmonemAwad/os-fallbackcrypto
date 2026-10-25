@@ -1,0 +1,12 @@
+<!--
+    SPDX-License-Identifier: BSD-2-Clause
+    Copyright (c) 2026 Abdelmonem Awad <eg2@live.com>
+-->
+<form>
+    <field>
+        <id>fallbackcrypto.general.mode</id>
+        <label>Crypto provider for IPsec</label>
+        <type>dropdown</type>
+        <help>Which of the kernel's crypto drivers encrypts the IPsec tunnels the host carries itself - on a Sophos XGS, those the coprocessor does not take. aesni is what OPNsense ships with. ossl uses OpenSSL's own AES-GCM code, which on a processor with AVX, PCLMULQDQ and MOVBE processes several blocks at once. Beside aesni, the kernel shares new sessions between the two; ossl only takes effect fully after a reboot. An open tunnel keeps its provider until its SAs are made again.</help>
+    </field>
+</form>

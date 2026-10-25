@@ -1,0 +1,14 @@
+<!--
+    SPDX-License-Identifier: BSD-2-Clause
+    Copyright (c) 2026 Abdelmonem Awad <eg2@live.com>
+-->
+<acl>
+    <page-vpn-ipsec-fallbackcrypto>
+        <name>VPN: IPsec: Fallback Crypto</name>
+        <description>Allow access to the choice of the host's crypto provider for IPsec, which loads a kernel module and writes a loader tunable</description>
+        <patterns>
+            <pattern>ui/fallbackcrypto/*</pattern>
+            <pattern>api/fallbackcrypto/*</pattern>
+        </patterns>
+    </page-vpn-ipsec-fallbackcrypto>
+</acl>
