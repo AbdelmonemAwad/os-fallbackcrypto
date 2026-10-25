@@ -1,0 +1,24 @@
+#!/bin/sh
+#-
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026 Abdelmonem Awad <eg2@live.com>
+#
+# Load ossl(4) - the kernel's OpenSSL-based crypto driver - early in the boot, before any IPsec
+# session exists, when the setting asks for it. Every tunnel set up afterwards can take it: the
+# kernel gives a new session to the provider with the best probe value, and on a tie (ossl and
+# aesni both answer "accelerated software") to the one with fewer sessions - so beside aesni the
+# sessions are shared, and with aesni switched off at the loader (the "only" setting) every session
+# is ossl's. Early, and numbered before os-xgs-npu's 07-npuep, which holds IPsec's sessions to
+# software providers on the XGS 136 - ossl is one. Never fails the boot.
+MODE=$(/usr/bin/sed -n '/<FallbackCrypto[ >]/,/<\/FallbackCrypto>/s:.*<mode>\([a-z]*\)</mode>.*:\1:p' \
+    /conf/config.xml 2>/dev/null | /usr/bin/head -1)
+case ${MODE} in
+alongside|only)
+	if /sbin/kldload -n ossl 2>/dev/null; then
+		/usr/bin/logger -t fallbackcrypto "ossl loaded (${MODE})"
+	else
+		/usr/bin/logger -t fallbackcrypto "ossl could not be loaded; IPsec stays on the kernel's own choice"
+	fi
+	;;
+esac
+exit 0

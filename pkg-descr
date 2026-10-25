@@ -1,0 +1,14 @@
+Fallback Crypto chooses which of the kernel's crypto drivers encrypts
+the IPsec tunnels the host carries itself - on a Sophos XGS, those its
+coprocessor does not take: aesni, as OPNsense ships, or ossl, the
+kernel's OpenSSL-based driver, beside aesni or in its place. The page
+shows the host's processor and the features AES-GCM depends on, the
+crypto providers present, and the IPsec SAs the host holds with their
+algorithms.
+
+Plugin Changelog
+================
+
+1.0.0
+
+* Initial release

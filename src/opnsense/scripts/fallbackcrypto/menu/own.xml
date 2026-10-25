@@ -1,0 +1,17 @@
+<!--
+    SPDX-License-Identifier: BSD-2-Clause
+    Copyright (c) 2026 Abdelmonem Awad <eg2@live.com>
+-->
+<menu>
+    <!--
+        Where os-xgs-npu is not installed: under VPN: IPsec, because what this page chooses is the
+        crypto driver that encrypts the IPsec tunnels the host carries itself. Order 900 puts it
+        after IPsec's own pages, the last of which, Log File, is 100. place-menu.sh copies this
+        file, or xgs.xml, to the model's Menu/Menu.xml.
+    -->
+    <VPN>
+        <IPsec>
+            <FallbackCrypto order="900" VisibleName="Fallback Crypto" url="/ui/fallbackcrypto"/>
+        </IPsec>
+    </VPN>
+</menu>
