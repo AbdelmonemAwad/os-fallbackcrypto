@@ -58,7 +58,9 @@ def processor():
         text = ''
     model = re.search(r'CPU: (.+?)\s+\(', text)
     name = model.group(1).strip() if model else run(['/sbin/sysctl', '-n', 'hw.model']).strip()
-    if not re.search(r'^\s+Features2=0x[0-9a-f]+<', text, re.M):
+    # Not anchored to the start of a line: 26.7's kernel begins every boot line with [n], the CPU
+    # that printed it (seen on 2026-10-29), and an anchored pattern read every processor as unknown.
+    if not re.search(r'Features2=0x[0-9a-f]+<', text):
         return name, None
     flags = set()
     for line in re.findall(r'(?:Features2?|Structured Extended Features\d?|AMD Features2?)=0x[0-9a-f]+<([^>]*)>', text):

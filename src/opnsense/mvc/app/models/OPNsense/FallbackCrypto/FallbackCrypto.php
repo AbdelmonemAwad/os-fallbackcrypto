@@ -20,12 +20,14 @@ class FallbackCrypto extends BaseModel
      * session at all - not a slower one - and the kernel gives it to aesni, or to its plain software
      * when aesni is switched off. The features are those the kernel printed at boot; 'unknown' when
      * dmesg.boot has no Features2 line, as when the message buffer wrapped before it was kept, and
-     * nothing is refused on that. status.py reads the same lines the same way for the page.
+     * nothing is refused on that. status.py reads the same lines the same way for the page. The line
+     * is looked for anywhere, not at the start of a line: 26.7's kernel begins every boot line with
+     * [n], the CPU that printed it.
      */
     public static function osslGcm($dmesg = '/var/run/dmesg.boot')
     {
         $text = @file_get_contents($dmesg);
-        if ($text === false || !preg_match('/^\s+Features2=0x[0-9a-f]+</m', $text)) {
+        if ($text === false || !preg_match('/Features2=0x[0-9a-f]+</', $text)) {
             return 'unknown';
         }
         $flags = [];
