@@ -1,4 +1,21 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/banner-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/readme/banner-light.svg">
+  <img src="docs/images/readme/banner-light.svg" alt="os-fallbackcrypto - IPsec on the processor's own crypto: aesni, ossl, or both" width="100%">
+</picture>
+
 # Fallback Crypto for OPNsense
+
+[![release](https://img.shields.io/github/v/release/AbdelmonemAwad/os-fallbackcrypto?sort=semver&style=flat-square&color=555555)](https://github.com/AbdelmonemAwad/os-fallbackcrypto/releases/latest)
+[![checks](https://github.com/AbdelmonemAwad/os-fallbackcrypto/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/AbdelmonemAwad/os-fallbackcrypto/actions/workflows/checks.yml)
+[![licence: BSD-2-Clause](https://img.shields.io/badge/licence-BSD--2--Clause-blue.svg?style=flat-square)](LICENSE)
+[![OPNsense 26.7](https://img.shields.io/badge/OPNsense-26.7-d94f00.svg?style=flat-square)](#what-is-tested)
+[![part of os-xgs-npu](https://img.shields.io/badge/part%20of-os--xgs--npu-9a6700.svg?style=flat-square)](https://github.com/AbdelmonemAwad/os-xgs-npu)
+
+[![AES-GCM encrypt: ossl 1960-2069 · aesni 2610-2798 ns](https://img.shields.io/badge/AES--GCM%20encrypt-ossl%201960--2069%20%C2%B7%20aesni%202610--2798%20ns-brightgreen.svg?style=flat-square)](#what-is-tested)
+[![ESP, 9000 B, 4 streams: ossl 4636-4749 · aesni 3846-3957 Mbit/s](https://img.shields.io/badge/ESP%2C%209000%20B%2C%204%20streams-ossl%204636--4749%20%C2%B7%20aesni%203846--3957%20Mbit%2Fs-brightgreen.svg?style=flat-square)](#what-is-tested)
+[![IPsec tunnel: on ossl from the boot](https://img.shields.io/badge/IPsec%20tunnel-on%20ossl%20from%20the%20boot-brightgreen.svg?style=flat-square)](#what-is-tested)
+[![XGS host: not measured yet](https://img.shields.io/badge/XGS%20host-not%20measured%20yet-lightgrey.svg?style=flat-square)](#what-is-tested)
 
 IPsec encryption accelerated on the host's processor, for the tunnels a Sophos XGS's coprocessor does not take.
 
@@ -9,6 +26,9 @@ IPsec encryption accelerated on the host's processor, for the tunnels a Sophos X
 > ~~**Written, not released (2026-10-22): the first part.** The choice of the kernel's crypto provider
 > for IPsec. There is no release, it has not been installed on an appliance, and nothing has been
 > measured through a tunnel yet. What was run is listed under [What is tested](#what-is-tested).~~
+>
+> **1.0.1 (2026-10-30):** "ossl only" refused where ossl has no AES-GCM, the page's state read from what runs, a removal that takes the plugin's own loader line, and SAs behind NAT counted. Tested in qemu on OPNsense 26.7.7 before the release; see
+> [What is tested](#what-is-tested).
 >
 > **1.0.0, the first release (2026-10-25): the first part**, the choice of the kernel's crypto
 > provider for IPsec. Installed and its page opened on an XGS 3300 (OPNsense 26.7.7) before the
@@ -212,8 +232,8 @@ Check it and read it before adding it, as root:
 
 ```sh
 sha256sum -c SHA256SUMS
-pkg info -lF os-fallbackcrypto-1.0.0.pkg      # every file it will write
-pkg add os-fallbackcrypto-1.0.0.pkg
+pkg info -lF os-fallbackcrypto-*.pkg       # every file it will write
+pkg add os-fallbackcrypto-*.pkg
 ```
 
 `pkg delete os-fallbackcrypto` leaves ossl loaded until the next boot, which no longer loads it, and
