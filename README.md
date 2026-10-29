@@ -179,9 +179,13 @@ sh install/install.sh
 It copies `src/` onto `/usr/local` (the early boot hook with it), checks the PHP with `php -l` and
 the Python with `py_compile`, puts the page in the menu (`place-menu.sh`: XGS with os-xgs-npu,
 VPN: IPsec without) and records the commit for the self-update. Safe to run again: the settings in
-config.xml are kept. Nothing changes until a provider is chosen and applied. Before
+config.xml are kept. Nothing changes until a provider is chosen and applied~~. Before
 `sh install/uninstall.sh`, set it back to "aesni only" and apply, or remove `hint.aesni.0.disabled`
-from System: Settings: Tunables afterwards.
+from System: Settings: Tunables afterwards.~~ - or, where config.xml holds "ossl beside aesni" or
+"ossl only" from an earlier install, until the installer applies it again at its end (since
+2026-10-29). `sh install/uninstall.sh` takes the `hint.aesni.0.disabled` row the "only" setting
+wrote with the files and writes loader.conf again, so aesni is back at the next boot; a row of that
+name written by hand stays, and it says so. The settings stay in config.xml.
 
 **From a release's package.** A release carries `os-fallbackcrypto-<version>.pkg` and `SHA256SUMS`,
 built by `tools/make-package.sh` in the release workflow; installing it has not been tested yet.
@@ -194,9 +198,11 @@ pkg add os-fallbackcrypto-1.0.0.pkg
 ```
 
 `pkg delete os-fallbackcrypto` leaves ossl loaded until the next boot, which no longer loads it, and
-keeps the settings and a `hint.aesni.0.disabled` row in Tunables if one was written - it says so
-when it does. The same package is built on the firewall from a checkout with
-`sh tools/make-package.sh -o /tmp`.
+keeps the settings~~ and a `hint.aesni.0.disabled` row in Tunables if one was written - it says so
+when it does~~; the `hint.aesni.0.disabled` row the "only" setting wrote goes with it, as with
+`uninstall.sh`, and one written by hand stays, with a note (since 2026-10-29). Adding the package
+again, or over itself with `pkg add -f`, applies a saved "ossl beside aesni" or "ossl only" again.
+The same package is built on the firewall from a checkout with `sh tools/make-package.sh -o /tmp`.
 
 ## Updates
 

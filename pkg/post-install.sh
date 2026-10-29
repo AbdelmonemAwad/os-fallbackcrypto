@@ -37,3 +37,16 @@ xgs)	echo "Fallback Crypto installed: the page is at XGS > Fallback Crypto" ;;
 own)	echo "Fallback Crypto installed: the page is at VPN > IPsec > Fallback Crypto" ;;
 *)	echo "Fallback Crypto installed; its menu file was not written: run /usr/local/opnsense/scripts/fallbackcrypto/place-menu.sh" ;;
 esac
+
+# The setting applied again where it wants ossl (2026-10-29). A removal takes the Tunables row the
+# "only" setting wrote with it and leaves the setting in config.xml, so a package added again - or
+# the same one added over itself, pkg add -f - comes back to where the setting says: ossl loaded, and
+# for "only" the row written again. apply.php changes nothing that is so already, as on an upgrade.
+MODE=$(/usr/bin/sed -n '/<FallbackCrypto[ >]/,/<\/FallbackCrypto>/s:.*<mode>\([a-z]*\)</mode>.*:\1:p' \
+    /conf/config.xml 2>/dev/null | /usr/bin/head -1)
+case "${MODE}" in
+alongside|only)
+	echo "Fallback Crypto: applying the setting saved in config.xml (${MODE})"
+	/usr/local/opnsense/scripts/fallbackcrypto/apply.php || true
+	;;
+esac
