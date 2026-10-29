@@ -12,8 +12,10 @@ IPsec encryption accelerated on the host's processor, for the tunnels a Sophos X
 >
 > **1.0.0, the first release (2026-10-25): the first part**, the choice of the kernel's crypto
 > provider for IPsec. Installed and its page opened on an XGS 3300 (OPNsense 26.7.7) before the
-> release; no provider has been applied through it and nothing measured through a tunnel yet. Updated
-> from XGS: Updates when os-xgs-npu is installed, or by its own self-update - see [Updates](#updates).
+> release; ~~no provider has been applied through it and nothing measured through a tunnel yet~~ -
+> since, on 2026-10-29 in qemu, each mode was applied through it and traffic measured through ESP
+> associations on each provider (see [What is tested](#what-is-tested)). Updated from XGS: Updates
+> when os-xgs-npu is installed, or by its own self-update - see [Updates](#updates).
 
 ## What it does
 
@@ -88,11 +90,41 @@ an Intel Xeon Gold 6252 host. Each mode was set through the plugin's model and a
   `hint.aesni.0.disabled removed`. After the reboot the hint was gone, aesni was back, ossl was not
   loaded, and aesni was the only provider again.
 
-Not tested: ~~`apply.php` (it loads ossl and writes the tunable)~~, a tunnel on ossl, the throughput
-of either provider, ~~aesni switched off~~, ~~the page in a browser~~ (opened on 2026-10-25, above),
-~~the package (built by `tools/make-package.sh`, added with pkg), and an install on a plain
-OPNsense, without os-xgs-npu~~ (on 2026-10-29 in qemu, above). A tunnel and its throughput need a
-peer, which a single machine in qemu does not have.
+On two such machines in qemu, 2026-10-29, the second a copy of the first, joined by a cable of
+their own (a virtio NIC each, on a Linux bridge of the host). Two ESP associations were keyed by
+hand with `setkey`, AES-GCM with a 256-bit key in transport mode, one each way: not a tunnel set up
+by OPNsense's IPsec, but the same kind of SA in the kernel, so the same choice of provider. Both
+machines were in the same mode. On the sending machine, dtrace counted the requests each provider
+took (`aesni_process`, `ossl_process`) and timed one request in each provider's AES-GCM routine
+(`aesni_cipher_crypt`, `ossl_aes_gcm`). iperf3 sent four streams for 15 s; the figure is the
+receiver's.
+
+| Mode | Requests taken by | Mbit/s | Encrypt, ns a request | Decrypt, ns a request |
+|---|---|---|---|---|
+| no ESP | - | 1312 | - | - |
+| aesni only | aesni, 3.6 to 3.8 million in 15 s | 1270 to 1376, six runs | 2610 to 2798 | 1742 to 1787 |
+| ossl beside aesni | aesni the outgoing SA, ossl the incoming one | 1370 | 2527 (aesni) | 1595 (ossl) |
+| ossl only | ossl, 3.9 to 4.0 million in 15 s | 1397 to 1442, three runs | 1960 to 2069 | 1618 to 1700 |
+
+- **Traffic through ESP on ossl.** With ossl only, every request went to ossl - aesni was not
+  attached - and the ESP counters grew by about 2.5 million packets each way in each run.
+- **Beside aesni, shared.** The two new SAs went one to each provider, as the kernel's tie rule has
+  it.
+- **No provider was the limit here.** Without ESP the two machines passed 1312 Mbit/s, and with ESP
+  on either provider about as much: the limit was the virtual machines' own packet path. What did
+  differ is the time one request took: ossl's encrypt about a quarter less than aesni's - the
+  stitched AVX code - and its decrypt a little less. The encrypted requests are full-size data
+  packets; the decrypted ones, on the sending machine, mostly acknowledgements, which is why they
+  cost less. dtrace's own cost is in every figure, the same probes for both.
+
+Not tested: ~~`apply.php` (it loads ossl and writes the tunable)~~, ~~a tunnel on ossl, the
+throughput of either provider~~ (through ESP associations keyed by hand, on 2026-10-29 in qemu,
+above), ~~aesni switched off~~, ~~the page in a browser~~ (opened on 2026-10-25, above), ~~the
+package (built by `tools/make-package.sh`, added with pkg), and an install on a plain OPNsense,
+without os-xgs-npu~~ (on 2026-10-29 in qemu, above). ~~A tunnel and its throughput need a peer,
+which a single machine in qemu does not have.~~ A second machine was added. Still not: a tunnel set
+up by OPNsense's IPsec (IKE) on ossl, and the throughput where a provider, not the path, is the
+limit.
 
 ## Installation
 
