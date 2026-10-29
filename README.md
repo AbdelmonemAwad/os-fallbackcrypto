@@ -14,8 +14,9 @@ IPsec encryption accelerated on the host's processor, for the tunnels a Sophos X
 > provider for IPsec. Installed and its page opened on an XGS 3300 (OPNsense 26.7.7) before the
 > release; ~~no provider has been applied through it and nothing measured through a tunnel yet~~ -
 > since, on 2026-10-29 in qemu, each mode was applied through it and traffic measured through ESP
-> associations on each provider (see [What is tested](#what-is-tested)). Updated from XGS: Updates
-> when os-xgs-npu is installed, or by its own self-update - see [Updates](#updates).
+> associations, and through an IPsec tunnel, on each provider (see [What is tested](#what-is-tested)).
+> Updated from XGS: Updates when os-xgs-npu is installed, or by its own self-update - see
+> [Updates](#updates).
 
 ## What it does
 
@@ -117,14 +118,31 @@ receiver's.
   packets; the decrypted ones, on the sending machine, mostly acknowledgements, which is why they
   cost less. dtrace's own cost is in every figure, the same probes for both.
 
+Then a tunnel set up by OPNsense's own IPsec, on the same two machines: IKEv2 with a pre-shared key,
+one child in tunnel mode between the two addresses with ESP AES-GCM-256. It was saved through VPN:
+IPsec's models and applied as its pages do - the Connections page's Enable, then its Apply
+(interface registration, filter reload, template reload, `ipsec start`) - with a rule passing what
+comes out of the tunnel on the IPsec interface. strongSwan established it, and its child SA was
+installed as `ESP:AES_GCM_16-256`.
+
+| Mode | Requests taken by | Mbit/s | Encrypt, ns a request | Decrypt, ns a request |
+|---|---|---|---|---|
+| aesni only | aesni, 3.7 million in 15 s | 1307, one run | 2711 | 1966 |
+| ossl only | ossl, 3.6 to 3.8 million in 15 s | 1275 to 1321, three runs | 2100 to 2144 | 1700 to 1781 |
+
+- **A tunnel on ossl, from the boot.** Set to ossl only and both machines rebooted, the tunnel came
+  up again by itself: the early script had loaded ossl (`ossl0` attached) eight seconds before
+  strongSwan started, no aesni device was left, and every request of the tunnel went to ossl. Its
+  child SA counted about 7 million packets each way over the three runs.
+
 Not tested: ~~`apply.php` (it loads ossl and writes the tunable)~~, ~~a tunnel on ossl, the
 throughput of either provider~~ (through ESP associations keyed by hand, on 2026-10-29 in qemu,
 above), ~~aesni switched off~~, ~~the page in a browser~~ (opened on 2026-10-25, above), ~~the
 package (built by `tools/make-package.sh`, added with pkg), and an install on a plain OPNsense,
 without os-xgs-npu~~ (on 2026-10-29 in qemu, above). ~~A tunnel and its throughput need a peer,
-which a single machine in qemu does not have.~~ A second machine was added. Still not: a tunnel set
-up by OPNsense's IPsec (IKE) on ossl, and the throughput where a provider, not the path, is the
-limit.
+which a single machine in qemu does not have.~~ A second machine was added. Still not: ~~a tunnel set
+up by OPNsense's IPsec (IKE) on ossl~~ (on 2026-10-29 in qemu, above), and the throughput where a
+provider, not the path, is the limit.
 
 ## Installation
 
