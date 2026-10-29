@@ -32,6 +32,13 @@ of the kernel's crypto drivers encrypts the IPsec tunnels the host carries itsel
   written through OPNsense's own Tunables, so it is visible in System: Settings: Tunables), so from
   the next boot every session is ossl's.
 
+**ossl only** is refused where ossl has no AES-GCM (since 2026-10-29): a processor without AES-NI, or
+with it but without AVX, PCLMULQDQ and MOVBE (or VAES with AVX-512) - an Atom or a Celeron of the
+kind many firewalls have. There ossl takes no AES-GCM session at all (`ossl_x86.c`), and with aesni
+switched off every one, IPsec's usual cipher, would go to the kernel's plain software. The setting
+is refused when it is saved and again when it is applied, and the processor card warns. A processor
+whose features `/var/run/dmesg.boot` does not name is not judged.
+
 The page shows the host's processor and the features AES-GCM depends on, which AES-GCM code ossl
 takes there, the providers present, whether IPsec is held to software providers, and the SAs in the
 kernel with their algorithms.

@@ -63,13 +63,15 @@
         const gcm = {
             'avx512': "{{ lang._('ossl: AES-GCM with AVX-512 and VAES') }}",
             'avx': "{{ lang._('ossl: AES-GCM with AVX, PCLMULQDQ and MOVBE') }}",
-            'none': "{{ lang._('ossl: no AES-GCM here') }}"
+            'none': "{{ lang._('ossl: no AES-GCM here') }}",
+            'unknown': "{{ lang._('Features unknown') }}"
         };
 
         /* apply.php's steps arrive as codes and are put into words here, so they are in the page's
            language (2026-10-29); a code this page does not know is shown as it came. */
         const said = {
             'no_ossl_module': "{{ lang._('No ossl module in this kernel') }}",
+            'no_aes_gcm': "{{ lang._('ossl has no AES-GCM on this processor (it needs AES-NI with AVX, PCLMULQDQ and MOVBE), so it cannot replace aesni.') }}",
             'ossl_loaded': "{{ lang._('ossl loaded') }}",
             'ossl_not_loaded': "{{ lang._('ossl could not be loaded') }}",
             'ossl_stays': "{{ lang._('ossl stays loaded until next boot') }}",
@@ -85,8 +87,12 @@
                 $cards.append(card('bad', 'fa-lock', "{{ lang._('Fallback Crypto') }}", "{{ lang._('Status unreadable') }}", ''));
                 return;
             }
-            $cards.append(card(data.ossl_gcm === 'none' ? '' : 'ok', 'fa-microchip', "{{ lang._('Processor') }}",
-                data.processor, gcm[data.ossl_gcm]));
+            /* A warning where ossl has no AES-GCM, which is also where "ossl only" is refused, or
+               where there is no AES-NI and neither driver does AES; no judgement where dmesg.boot
+               names no features (2026-10-29). Before, such a processor had a grey card. */
+            const cpu = data.ossl_gcm === 'none' ? 'warn' : (data.ossl_gcm === 'unknown' ? '' : 'ok');
+            $cards.append(card(cpu, 'fa-microchip', "{{ lang._('Processor') }}", data.processor,
+                data.ossl_gcm === 'none' && !data.features.AESNI ? "{{ lang._('No AES-NI') }}" : gcm[data.ossl_gcm]));
             const names = Object.keys(data.providers);
             $cards.append(card(names.length ? 'ok' : 'warn', 'fa-cubes', "{{ lang._('Crypto providers') }}",
                 names.length ? names.join(', ') : "{{ lang._('none') }}",
@@ -120,6 +126,9 @@
                 $f.append($('<tr/>').append($('<td/>').append($('<code/>').text(k)))
                     .append($('<td/>').text(data.features[k] ? "{{ lang._('yes') }}" : "{{ lang._('no') }}")));
             });
+            if (!Object.keys(data.features).length) {
+                $f.append($('<tr/>').append($('<td colspan="2" class="text-muted"/>').text(plain("{{ lang._('Features unknown') }}"))));
+            }
             const $s = $('#fc-sas tbody').empty();
             data.sas.forEach(function (s) {
                 $s.append($('<tr/>').append($('<td/>').append($('<code/>').text(s.pair)))

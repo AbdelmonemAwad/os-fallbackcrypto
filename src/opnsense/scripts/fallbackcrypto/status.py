@@ -48,20 +48,29 @@ def loaded(module):
 
 
 def processor():
+    """The processor's name, and its features as the kernel printed them at boot - None when
+    dmesg.boot has no Features2 line, as when the message buffer wrapped before it was kept. Until
+    2026-10-29 every feature then read as absent, and a processor that could not be read was taken
+    for one without AES-NI."""
     try:
         text = open(DMESG, encoding='utf-8', errors='replace').read()
     except OSError:
         text = ''
     model = re.search(r'CPU: (.+?)\s+\(', text)
+    name = model.group(1).strip() if model else run(['/sbin/sysctl', '-n', 'hw.model']).strip()
+    if not re.search(r'^\s+Features2=0x[0-9a-f]+<', text, re.M):
+        return name, None
     flags = set()
     for line in re.findall(r'(?:Features2?|Structured Extended Features\d?|AMD Features2?)=0x[0-9a-f]+<([^>]*)>', text):
         flags.update(line.split(','))
-    return (model.group(1).strip() if model else run(['/sbin/sysctl', '-n', 'hw.model']).strip(),
-            {f: f in flags for f in FEATURES})
+    return name, {f: f in flags for f in FEATURES}
 
 
 def gcm_path(f):
-    """Which AES-GCM ossl's ossl_x86.c takes on this processor (opnsense/src stable/26.7)."""
+    """Which AES-GCM ossl's ossl_x86.c takes on this processor (opnsense/src stable/26.7); the model's
+    osslGcm() applies the same rule to refuse "ossl only" where the answer is 'none'."""
+    if f is None:
+        return 'unknown'
     if not f['AESNI']:
         return 'none'
     if f['VAES'] and f['VPCLMULQDQ'] and f['AVX512F']:
@@ -117,7 +126,7 @@ def main():
     support = run(['/sbin/sysctl', '-n', 'net.inet.ipsec.crypto_support']).strip()
     print(json.dumps({
         'processor': model,
-        'features': features,
+        'features': features or {},
         'ossl_gcm': gcm_path(features),
         'ossl_available': os.path.exists('/boot/kernel/ossl.ko'),
         'ossl_loaded': loaded('ossl'),

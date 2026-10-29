@@ -25,6 +25,7 @@
  * 2026-10-29 they were English sentences, and a page shown in Arabic showed them in English.
  *
  *   no_ossl_module    this kernel has no ossl.ko; nothing was changed (failed)
+ *   no_aes_gcm        "only" where ossl has no AES-GCM; nothing was changed (failed)
  *   ossl_loaded       ossl loaded, or found loaded already
  *   ossl_not_loaded   kldload refused ossl; its words are the detail, and nothing was written (failed)
  *   ossl_stays        ossl is loaded and the setting no longer wants it: it stays until the next
@@ -67,6 +68,13 @@ $steps = [];
 if ($wants_ossl) {
     if (!file_exists('/boot/kernel/ossl.ko')) {
         fc_answer('failed', ['no_ossl_module']);
+    }
+    /* "only" where ossl has no AES-GCM switches aesni off for nothing: every AES-GCM session would go
+       to the kernel's plain software (2026-10-29). The model refuses it on the page; this refuses it
+       for a setting that reached config.xml another way - restored, or saved before that refusal -
+       before anything is loaded or written. */
+    if ($mode === 'only' && \OPNsense\FallbackCrypto\FallbackCrypto::osslGcm() === 'none') {
+        fc_answer('failed', ['no_aes_gcm']);
     }
     /* Until 2026-10-29 a refusal here was one step among the others, the answer still "ok", and
        "only" still wrote the loader line: aesni switched off at the next boot for a driver that had
