@@ -70,10 +70,29 @@ On the first XGS 3300, 2026-10-25, OPNsense 26.7.7 with os-xgs-npu installed, be
 - its menu place: under **XGS** with os-xgs-npu installed; in its own section, **VPN: IPsec**, when
   os-xgs-npu's menu file was set aside, and back under XGS when it was put back (`place-menu.sh`).
 
-Not tested: `apply.php` (it loads ossl and writes the tunable), a tunnel on ossl, the throughput of
-either provider, aesni switched off, ~~the page in a browser~~ (opened on 2026-10-25, above), the
-package (built by `tools/make-package.sh`, added with pkg), and an install on a plain OPNsense,
-without os-xgs-npu.
+On a plain OPNsense 26.7 in qemu, 2026-10-29: the nano image with nothing of os-xgs-npu on it, on
+an Intel Xeon Gold 6252 host. Each mode was set through the plugin's model and applied with
+`configctl fallbackcrypto apply`, as the page applies it.
+
+- **The package.** `os-fallbackcrypto-1.0.0.pkg` and `SHA256SUMS` were fetched from the release and
+  the sum checked OK. `pkg add` returned 0, and the page is under VPN > IPsec > Fallback Crypto.
+- **The host, as the status reads it.** It found AES-NI, PCLMULQDQ, AVX, MOVBE, AVX2 and AVX-512F,
+  and no VAES, so ossl's AES-GCM is the stitched AVX code ("avx"). The only provider was aesni.
+- **ossl beside aesni.** apply answered `ossl loaded`, `ossl0: <OpenSSL crypto>` attached, and the
+  providers became aesni and ossl. No reboot was asked for.
+- **ossl only.** apply answered `hint.aesni.0.disabled=1: aesni is switched off at the next boot`
+  and `loader.conf written`, and asked for a reboot; the tunable is in System: Settings: Tunables.
+  After the reboot `kenv` showed the hint, no aesni device was left (`devinfo`), the early script
+  had loaded ossl, and ossl was the only provider.
+- **Back to off.** apply answered that ossl stays until the next boot, which does not load it, and
+  `hint.aesni.0.disabled removed`. After the reboot the hint was gone, aesni was back, ossl was not
+  loaded, and aesni was the only provider again.
+
+Not tested: ~~`apply.php` (it loads ossl and writes the tunable)~~, a tunnel on ossl, the throughput
+of either provider, ~~aesni switched off~~, ~~the page in a browser~~ (opened on 2026-10-25, above),
+~~the package (built by `tools/make-package.sh`, added with pkg), and an install on a plain
+OPNsense, without os-xgs-npu~~ (on 2026-10-29 in qemu, above). A tunnel and its throughput need a
+peer, which a single machine in qemu does not have.
 
 ## Installation
 
