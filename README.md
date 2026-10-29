@@ -39,6 +39,14 @@ switched off every one, IPsec's usual cipher, would go to the kernel's plain sof
 is refused when it is saved and again when it is applied, and the processor card warns. A processor
 whose features `/var/run/dmesg.boot` does not name is not judged.
 
+**ossl only** switches aesni off for every user of the kernel's crypto, not for IPsec alone. ossl
+takes AES-CBC, AES-GCM and ChaCha20, alone or with Poly1305, and no other cipher - read in `ossl.c`
+(`ossl_lookup_cipher()`, `ossl_probesession()`, opnsense/src stable/26.7), not measured - so with
+aesni off, AES-XTS (GELI's disk encryption), AES-CCM and AES-ICM (AES-CTR) go to the kernel's plain
+software. The other way round, ossl takes ChaCha20-Poly1305 and aesni does not, so with ossl loaded,
+beside aesni or alone, an SA with that cipher goes to ossl rather than to the plain software - read
+the same way, not measured.
+
 The page shows the host's processor and the features AES-GCM depends on, which AES-GCM code ossl
 takes there, the providers present, whether IPsec is held to software providers, and the SAs in the
 kernel with their algorithms.
@@ -49,7 +57,11 @@ once. The XGS 3300's host, an AMD Ryzen Embedded V1780B, has AVX, PCLMULQDQ and 
 so ossl would take the second.
 
 ~~a faster software path for the IPsec associations left to the host~~ - written as the choice of
-provider above; whether ossl is faster than aesni on these hosts, and by how much, is not measured yet.
+provider above; ~~whether ossl is faster than aesni on these hosts, and by how much, is not measured
+yet~~ measured in qemu on 2026-10-29 (see [What is tested](#what-is-tested)): ossl's AES-GCM encrypt
+took about a quarter less time a request than aesni's, and with 9000-byte frames, where the crypto
+set the limit, ossl carried about a fifth more through ESP with four streams, about as much with
+one. Not yet on an XGS host.
 No new crypto driver was needed for this step: OpenSSL's code is already in the kernel as ossl.
 
 ~~a page, in the XGS section of OPNsense's menu or as a plugin of its own - not decided yet~~ - a
@@ -166,6 +178,12 @@ which a single machine in qemu does not have.~~ A second machine was added. Stil
 up by OPNsense's IPsec (IKE) on ossl~~ (on 2026-10-29 in qemu, above), ~~and the throughput where a
 provider, not the path, is the limit~~ (with 9000-byte frames, on 2026-10-29 in qemu, above).
 
+Written on 2026-10-29 and not yet run on an OPNsense: "ossl only" refused where ossl has no AES-GCM,
+on the page and by apply; a failed kldload failing the apply; the reboot and the Next boot card's
+three states read from kenv and ossl; an SA behind NAT listed with its own algorithms; apply's
+steps put into words by the page; the removal taking the plugin's own Tunables row with it, and an
+install applying the saved setting again.
+
 ## Installation
 
 It is not in the OPNsense plugin repository, so there is no `pkg install os-fallbackcrypto`.
@@ -188,7 +206,8 @@ wrote with the files and writes loader.conf again, so aesni is back at the next 
 name written by hand stays, and it says so. The settings stay in config.xml.
 
 **From a release's package.** A release carries `os-fallbackcrypto-<version>.pkg` and `SHA256SUMS`,
-built by `tools/make-package.sh` in the release workflow; installing it has not been tested yet.
+built by `tools/make-package.sh` in the release workflow; ~~installing it has not been tested yet~~ -
+added with pkg on a plain OPNsense 26.7 in qemu on 2026-10-29 (see [What is tested](#what-is-tested)).
 Check it and read it before adding it, as root:
 
 ```sh

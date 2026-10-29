@@ -7,6 +7,6 @@
         <id>fallbackcrypto.general.mode</id>
         <label>Crypto provider for IPsec</label>
         <type>dropdown</type>
-        <help>Which of the kernel's crypto drivers encrypts the IPsec tunnels the host carries itself - on a Sophos XGS, those the coprocessor does not take. aesni is what OPNsense ships with. ossl uses OpenSSL's own AES-GCM code, which on a processor with AVX, PCLMULQDQ and MOVBE processes several blocks at once. Beside aesni, the kernel shares new sessions between the two; ossl only takes effect fully after a reboot. An open tunnel keeps its provider until its SAs are made again.</help>
+        <help>Which of the kernel's crypto drivers encrypts the IPsec tunnels the host carries itself - on a Sophos XGS, those the coprocessor does not take. aesni is what OPNsense ships with. ossl uses OpenSSL's own AES-GCM code, which on a processor with AVX, PCLMULQDQ and MOVBE processes several blocks at once; without those, or without AES-NI, ossl has no AES-GCM at all, and ossl only is refused. Beside aesni, the kernel shares new sessions between the two; ossl only takes effect fully after a reboot. ossl only switches aesni off for every user of the kernel's crypto, not IPsec alone: ossl takes AES-CBC, AES-GCM and ChaCha20 only, so AES-XTS (GELI), AES-CCM and AES-CTR then run in plain software. ossl also takes ChaCha20-Poly1305, which aesni does not (read in ossl.c, not measured). An open tunnel keeps its provider until its SAs are made again.</help>
     </field>
 </form>
