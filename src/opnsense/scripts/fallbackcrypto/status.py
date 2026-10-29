@@ -102,7 +102,10 @@ def main():
     try:
         root = ET.parse(CONFIG).getroot()
         mode = root.findtext('OPNsense/FallbackCrypto/general/mode') or 'off'
+        # A row switches aesni off only with the value 1; until 2026-10-29 any row named so counted,
+        # one set to 0 by hand among them.
         tunable = any((item.findtext('tunable') or '') == 'hint.aesni.0.disabled'
+                      and (item.findtext('value') or '').strip() == '1'
                       for item in root.findall('sysctl/item'))
     except (OSError, ET.ParseError):
         mode, tunable = 'off', False

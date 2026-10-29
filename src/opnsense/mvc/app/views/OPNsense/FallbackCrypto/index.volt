@@ -95,10 +95,24 @@
             data.sas.forEach(function (s) { algos[s.enc || '-'] = (algos[s.enc || '-'] || 0) + 1; });
             $cards.append(card('', 'fa-exchange', "{{ lang._('IPsec SAs') }}", String(data.sas.length),
                 Object.keys(algos).map(function (a) { return a + ' ' + algos[a]; }).join(', ')));
-            const pending = (data.mode === 'only') !== !!data.aesni_disabled_now;
-            $cards.append(card(pending ? 'warn' : 'ok', 'fa-power-off', "{{ lang._('Next boot') }}",
+            /* The setting against what runs (2026-10-29). Applied: ossl loaded where the setting wants
+               it, and the loader line written exactly where it wants aesni off. Then in effect, or
+               waiting for the boot that switches aesni off or on again, or that leaves out an ossl no
+               longer wanted - loaded, it keeps taking a share of the new sessions. Until then only
+               aesni at this boot was compared, and a setting saved but never applied, or "aesni only"
+               with ossl still loaded, read as in effect. */
+            const wants_ossl = data.mode === 'alongside' || data.mode === 'only';
+            const wants_off = data.mode === 'only';
+            let state = 'effect';
+            if ((wants_ossl && !data.ossl_loaded) || wants_off !== !!data.aesni_disabled_next_boot) {
+                state = 'apply';
+            } else if (wants_off !== !!data.aesni_disabled_now || (!wants_ossl && data.ossl_loaded)) {
+                state = 'reboot';
+            }
+            $cards.append(card(state === 'effect' ? 'ok' : 'warn', 'fa-power-off', "{{ lang._('Next boot') }}",
                 data.mode === 'only' ? "{{ lang._('ossl only') }}" : (data.mode === 'alongside' ? "{{ lang._('ossl beside aesni') }}" : "{{ lang._('aesni only') }}"),
-                pending ? "{{ lang._('Reboot needed') }}" : "{{ lang._('In effect') }}"));
+                {'apply': "{{ lang._('Apply needed') }}", 'reboot': "{{ lang._('Reboot needed') }}",
+                    'effect': "{{ lang._('In effect') }}"}[state]));
             $('#fc-noossl').toggle(!data.ossl_available);
 
             const $f = $('#fc-features tbody').empty();

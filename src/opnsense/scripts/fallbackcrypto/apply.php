@@ -26,7 +26,7 @@
  *
  *   no_ossl_module    this kernel has no ossl.ko; nothing was changed (failed)
  *   ossl_loaded       ossl loaded, or found loaded already
- *   ossl_not_loaded   kldload refused ossl; its words are the detail
+ *   ossl_not_loaded   kldload refused ossl; its words are the detail, and nothing was written (failed)
  *   ossl_stays        ossl is loaded and the setting no longer wants it: it stays until the next
  *                     boot, which does not load it
  *   hint_written      hint.aesni.0.disabled=1 written: aesni is switched off at the next boot
@@ -61,23 +61,23 @@ function fc_ossl_loaded()
 
 $cfg = \OPNsense\Core\Config::getInstance();
 $mode = (string)(new \OPNsense\FallbackCrypto\FallbackCrypto())->general->mode;
+$wants_ossl = $mode === 'alongside' || $mode === 'only';
 $steps = [];
-$detail = '';
-$reboot = false;
 
-if ($mode === 'alongside' || $mode === 'only') {
+if ($wants_ossl) {
     if (!file_exists('/boot/kernel/ossl.ko')) {
         fc_answer('failed', ['no_ossl_module']);
     }
+    /* Until 2026-10-29 a refusal here was one step among the others, the answer still "ok", and
+       "only" still wrote the loader line: aesni switched off at the next boot for a driver that had
+       just failed to load, and would fail at that boot too if the cause was its own. */
     $rc = 0;
     $out = [];
     exec('/sbin/kldload -n ossl 2>&1', $out, $rc);
-    if ($rc === 0) {
-        $steps[] = 'ossl_loaded';
-    } else {
-        $steps[] = 'ossl_not_loaded';
-        $detail = implode(' ', $out);
+    if ($rc !== 0) {
+        fc_answer('failed', ['ossl_not_loaded'], false, implode(' ', $out));
     }
+    $steps[] = 'ossl_loaded';
 } elseif (fc_ossl_loaded()) {
     $steps[] = 'ossl_stays';
 }
@@ -122,7 +122,15 @@ if ($changed) {
     $steps = array_merge($steps, $hint_steps, ['loader_written']);
 }
 
-$aesni_now = trim((string)shell_exec('/sbin/sysctl -n dev.aesni.0.%desc 2>/dev/null')) !== '';
-$reboot = ($wanted && $aesni_now) || (!$wanted && !$aesni_now);
+/*
+ * Whether the setting is complete only after a reboot, read from what this boot set up (2026-10-29):
+ * kenv holds the hints the loader passed, so a line written since does not show there yet - aesni off
+ * at this boot or not, against the setting - and ossl loaded where the setting wants none, which keeps
+ * it taking a share of the new sessions until the boot that does not load it. It was read from
+ * whether aesni had attached, and a processor where aesni never attaches (no AES-NI and no SHA, as
+ * qemu's default CPU) was told to reboot after every apply, while ossl left loaded was not.
+ */
+$hint_now = trim((string)shell_exec('/bin/kenv -q hint.aesni.0.disabled 2>/dev/null')) === '1';
+$reboot = ($wanted !== $hint_now) || (!$wants_ossl && fc_ossl_loaded());
 
-fc_answer('ok', $steps, $reboot, $detail);
+fc_answer('ok', $steps, $reboot);
