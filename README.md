@@ -135,14 +135,29 @@ installed as `ESP:AES_GCM_16-256`.
   strongSwan started, no aesni device was left, and every request of the tunnel went to ossl. Its
   child SA counted about 7 million packets each way over the three runs.
 
+Then 9000-byte frames on the two machines' cable - the MTU of both interfaces set as their pages
+set it, and the host's bridge raised to match - with the ESP associations keyed by hand as above. A
+frame carries six times the bytes of a 1500-byte one, so the path's work per packet weighs less and
+the crypto's work per byte more. One stream, then four, 15 s each, the receiver's figure, two runs:
+
+| | 1 stream, Mbit/s | 4 streams, Mbit/s |
+|---|---|---|
+| no ESP | 4877, 5008 | 5963, 6816 |
+| ESP, aesni only | 3619, 3740 | 3846, 3957 |
+| ESP, ossl only | 3672, 4030 | 4636, 4749 |
+
+- **Here the crypto was the limit.** With ESP the throughput fell well below the path's own, and the
+  provider counted with dtrace took every request: 1.5 to 2.0 million in 15 s.
+- **ossl carried more.** With four streams, about a fifth more than aesni; with one, about the same.
+
 Not tested: ~~`apply.php` (it loads ossl and writes the tunable)~~, ~~a tunnel on ossl, the
 throughput of either provider~~ (through ESP associations keyed by hand, on 2026-10-29 in qemu,
 above), ~~aesni switched off~~, ~~the page in a browser~~ (opened on 2026-10-25, above), ~~the
 package (built by `tools/make-package.sh`, added with pkg), and an install on a plain OPNsense,
 without os-xgs-npu~~ (on 2026-10-29 in qemu, above). ~~A tunnel and its throughput need a peer,
 which a single machine in qemu does not have.~~ A second machine was added. Still not: ~~a tunnel set
-up by OPNsense's IPsec (IKE) on ossl~~ (on 2026-10-29 in qemu, above), and the throughput where a
-provider, not the path, is the limit.
+up by OPNsense's IPsec (IKE) on ossl~~ (on 2026-10-29 in qemu, above), ~~and the throughput where a
+provider, not the path, is the limit~~ (with 9000-byte frames, on 2026-10-29 in qemu, above).
 
 ## Installation
 
@@ -198,8 +213,14 @@ reaches an installed firewall when it is released, not before.
   beside it.
 - `self-update.py check` says what it would do and changes nothing.
 
-Not tested yet: an update taken this way - 1.0.0 is the first release, so none has been ahead of an
-installed copy.
+~~Not tested yet: an update taken this way - 1.0.0 is the first release, so none has been ahead of
+an installed copy.~~ Tested on 2026-10-29 on a plain OPNsense 26.7 in qemu, where the package had
+been added with pkg, which records no commit: `self-update.py check` found the release `v1.0.0`
+(2dcbb8c9a820) and nothing installed to compare it with, so to be taken. `self-update.py` fetched
+its source, ran its `install/install.sh` and answered `updated to v1.0.0 (2dcbb8c9a820)`, which the
+system log has too. `installed.json` then recorded that commit, from the stamp, and a second check
+found it identical: nothing to take. Not yet: a release ahead of the one installed - 1.0.0 is
+still the only release.
 
 ## Where it fits
 
