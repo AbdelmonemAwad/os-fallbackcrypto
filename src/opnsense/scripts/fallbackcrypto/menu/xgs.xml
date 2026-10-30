@@ -13,6 +13,6 @@
         Menu/Menu.xml.
     -->
     <XGS VisibleName="XGS" cssClass="fa fa-microchip fa-fw" order="35">
-        <FallbackCrypto order="57" VisibleName="Fallback Crypto" url="/ui/fallbackcrypto"/>
+        <FallbackCrypto order="57" VisibleName="Fallback Crypto" cssClass="fa fa-key fa-fw" url="/ui/fallbackcrypto"/>
     </XGS>
 </menu>
