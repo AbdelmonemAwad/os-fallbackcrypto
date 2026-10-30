@@ -1,21 +1,24 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/banner-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="docs/images/readme/banner-light.svg">
-  <img src="docs/images/readme/banner-light.svg" alt="os-fallbackcrypto - IPsec on the processor's own crypto: aesni, ossl, or both" width="100%">
+  <img src="docs/images/readme/banner-light.svg" alt="os-fallbackcrypto - IPsec on the processor’s own crypto: aesni, ossl, or both" width="100%">
 </picture>
 
+<p align="center">
+  <a href="https://github.com/AbdelmonemAwad/os-fallbackcrypto/releases/latest"><img alt="the newest release" src="https://img.shields.io/github/v/release/AbdelmonemAwad/os-fallbackcrypto?sort=semver&amp;style=flat-square&amp;label=release&amp;color=8250df"></a>
+  <a href="https://github.com/AbdelmonemAwad/os-fallbackcrypto/actions/workflows/checks.yml"><img alt="checks on main" src="https://img.shields.io/github/actions/workflow/status/AbdelmonemAwad/os-fallbackcrypto/checks.yml?branch=main&amp;style=flat-square&amp;label=checks"></a>
+  <a href="LICENSE"><img alt="licence: BSD-2-Clause" src="https://img.shields.io/badge/licence-BSD--2--Clause-blue.svg?style=flat-square"></a>
+  <a href="#what-is-tested"><img alt="OPNsense 26.7" src="https://img.shields.io/badge/OPNsense-26.7-d94f00.svg?style=flat-square"></a>
+  <a href="https://github.com/AbdelmonemAwad/opnsense-arabic"><img alt="the page in English and in Arabic" src="https://img.shields.io/badge/GUI-English%20%C2%B7%20Arabic-2da44e.svg?style=flat-square"></a>
+  <a href="https://github.com/AbdelmonemAwad/os-xgs-npu"><img alt="part of os-xgs-npu" src="https://img.shields.io/badge/part%20of-os--xgs--npu-9a6700.svg?style=flat-square"></a>
+  <br>
+  <a href="#what-is-tested"><img alt="AES-GCM encrypt: ossl 1960-2069 · aesni 2610-2798 ns" src="https://img.shields.io/badge/AES--GCM%20encrypt-ossl%201960--2069%20%C2%B7%20aesni%202610--2798%20ns-brightgreen.svg?style=flat-square"></a>
+  <a href="#what-is-tested"><img alt="ESP, 9000 B, 4 streams: ossl 4636-4749 · aesni 3846-3957 Mbit/s" src="https://img.shields.io/badge/ESP%2C%209000%20B%2C%204%20streams-ossl%204636--4749%20%C2%B7%20aesni%203846--3957%20Mbit%2Fs-brightgreen.svg?style=flat-square"></a>
+  <a href="#what-is-tested"><img alt="IPsec tunnel: on ossl from the boot" src="https://img.shields.io/badge/IPsec%20tunnel-on%20ossl%20from%20the%20boot-brightgreen.svg?style=flat-square"></a>
+  <a href="#what-is-tested"><img alt="XGS host: not measured yet" src="https://img.shields.io/badge/XGS%20host-not%20measured%20yet-lightgrey.svg?style=flat-square"></a>
+</p>
+
 # Fallback Crypto for OPNsense
-
-[![release](https://img.shields.io/github/v/release/AbdelmonemAwad/os-fallbackcrypto?sort=semver&style=flat-square&color=555555)](https://github.com/AbdelmonemAwad/os-fallbackcrypto/releases/latest)
-[![checks](https://github.com/AbdelmonemAwad/os-fallbackcrypto/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/AbdelmonemAwad/os-fallbackcrypto/actions/workflows/checks.yml)
-[![licence: BSD-2-Clause](https://img.shields.io/badge/licence-BSD--2--Clause-blue.svg?style=flat-square)](LICENSE)
-[![OPNsense 26.7](https://img.shields.io/badge/OPNsense-26.7-d94f00.svg?style=flat-square)](#what-is-tested)
-[![part of os-xgs-npu](https://img.shields.io/badge/part%20of-os--xgs--npu-9a6700.svg?style=flat-square)](https://github.com/AbdelmonemAwad/os-xgs-npu)
-
-[![AES-GCM encrypt: ossl 1960-2069 · aesni 2610-2798 ns](https://img.shields.io/badge/AES--GCM%20encrypt-ossl%201960--2069%20%C2%B7%20aesni%202610--2798%20ns-brightgreen.svg?style=flat-square)](#what-is-tested)
-[![ESP, 9000 B, 4 streams: ossl 4636-4749 · aesni 3846-3957 Mbit/s](https://img.shields.io/badge/ESP%2C%209000%20B%2C%204%20streams-ossl%204636--4749%20%C2%B7%20aesni%203846--3957%20Mbit%2Fs-brightgreen.svg?style=flat-square)](#what-is-tested)
-[![IPsec tunnel: on ossl from the boot](https://img.shields.io/badge/IPsec%20tunnel-on%20ossl%20from%20the%20boot-brightgreen.svg?style=flat-square)](#what-is-tested)
-[![XGS host: not measured yet](https://img.shields.io/badge/XGS%20host-not%20measured%20yet-lightgrey.svg?style=flat-square)](#what-is-tested)
 
 IPsec encryption accelerated on the host's processor, for the tunnels a Sophos XGS's coprocessor does not take.
 
@@ -37,6 +40,8 @@ IPsec encryption accelerated on the host's processor, for the tunnels a Sophos X
 > associations, and through an IPsec tunnel, on each provider (see [What is tested](#what-is-tested)).
 > Updated from XGS: Updates when os-xgs-npu is installed, or by its own self-update - see
 > [Updates](#updates).
+
+<p align="center"><b>Contents:</b> <a href="#what-it-does">What it does</a> &middot; <a href="#beside-os-xgs-npu">Beside os-xgs-npu</a> &middot; <a href="#what-is-tested">What is tested</a> &middot; <a href="#installation">Installation</a> &middot; <a href="#updates">Updates</a> &middot; <a href="#where-it-fits">Where it fits</a> &middot; <a href="#licence">Licence</a></p>
 
 ## What it does
 
@@ -271,8 +276,10 @@ been added with pkg, which records no commit: `self-update.py check` found the r
 (2dcbb8c9a820) and nothing installed to compare it with, so to be taken. `self-update.py` fetched
 its source, ran its `install/install.sh` and answered `updated to v1.0.0 (2dcbb8c9a820)`, which the
 system log has too. `installed.json` then recorded that commit, from the stamp, and a second check
-found it identical: nothing to take. Not yet: a release ahead of the one installed - 1.0.0 is
-still the only release.
+found it identical: nothing to take. ~~Not yet: a release ahead of the one installed - 1.0.0 is
+still the only release.~~ Taken on 2026-10-30, on an XGS 3300 with OPNsense 26.7.7: with 1.0.0
+installed, `self-update.py`, run over SSH, answered `updated to v1.0.1 (c68414407d80)`, the system
+log carries the same line, and `installed.json` recorded that commit.
 
 ## Where it fits
 
