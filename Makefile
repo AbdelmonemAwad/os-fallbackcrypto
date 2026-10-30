@@ -3,7 +3,7 @@
 # Copyright (c) 2026 Abdelmonem Awad <eg2@live.com>
 #
 PLUGIN_NAME=		fallbackcrypto
-PLUGIN_VERSION=		1.0.0
+PLUGIN_VERSION=		1.0.1
 PLUGIN_COMMENT=		Choose the host's kernel crypto provider for IPsec
 PLUGIN_MAINTAINER=	eg2@live.com
 

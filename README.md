@@ -1,4 +1,21 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/banner-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/readme/banner-light.svg">
+  <img src="docs/images/readme/banner-light.svg" alt="os-fallbackcrypto - IPsec on the processor's own crypto: aesni, ossl, or both" width="100%">
+</picture>
+
 # Fallback Crypto for OPNsense
+
+[![release](https://img.shields.io/github/v/release/AbdelmonemAwad/os-fallbackcrypto?sort=semver&style=flat-square&color=555555)](https://github.com/AbdelmonemAwad/os-fallbackcrypto/releases/latest)
+[![checks](https://github.com/AbdelmonemAwad/os-fallbackcrypto/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/AbdelmonemAwad/os-fallbackcrypto/actions/workflows/checks.yml)
+[![licence: BSD-2-Clause](https://img.shields.io/badge/licence-BSD--2--Clause-blue.svg?style=flat-square)](LICENSE)
+[![OPNsense 26.7](https://img.shields.io/badge/OPNsense-26.7-d94f00.svg?style=flat-square)](#what-is-tested)
+[![part of os-xgs-npu](https://img.shields.io/badge/part%20of-os--xgs--npu-9a6700.svg?style=flat-square)](https://github.com/AbdelmonemAwad/os-xgs-npu)
+
+[![AES-GCM encrypt: ossl 1960-2069 · aesni 2610-2798 ns](https://img.shields.io/badge/AES--GCM%20encrypt-ossl%201960--2069%20%C2%B7%20aesni%202610--2798%20ns-brightgreen.svg?style=flat-square)](#what-is-tested)
+[![ESP, 9000 B, 4 streams: ossl 4636-4749 · aesni 3846-3957 Mbit/s](https://img.shields.io/badge/ESP%2C%209000%20B%2C%204%20streams-ossl%204636--4749%20%C2%B7%20aesni%203846--3957%20Mbit%2Fs-brightgreen.svg?style=flat-square)](#what-is-tested)
+[![IPsec tunnel: on ossl from the boot](https://img.shields.io/badge/IPsec%20tunnel-on%20ossl%20from%20the%20boot-brightgreen.svg?style=flat-square)](#what-is-tested)
+[![XGS host: not measured yet](https://img.shields.io/badge/XGS%20host-not%20measured%20yet-lightgrey.svg?style=flat-square)](#what-is-tested)
 
 IPsec encryption accelerated on the host's processor, for the tunnels a Sophos XGS's coprocessor does not take.
 
@@ -9,6 +26,9 @@ IPsec encryption accelerated on the host's processor, for the tunnels a Sophos X
 > ~~**Written, not released (2026-10-22): the first part.** The choice of the kernel's crypto provider
 > for IPsec. There is no release, it has not been installed on an appliance, and nothing has been
 > measured through a tunnel yet. What was run is listed under [What is tested](#what-is-tested).~~
+>
+> **1.0.1 (2026-10-30):** "ossl only" refused where ossl has no AES-GCM, the page's state read from what runs, a removal that takes the plugin's own loader line, and SAs behind NAT counted. Tested in qemu on OPNsense 26.7.7 before the release; see
+> [What is tested](#what-is-tested).
 >
 > **1.0.0, the first release (2026-10-25): the first part**, the choice of the kernel's crypto
 > provider for IPsec. Installed and its page opened on an XGS 3300 (OPNsense 26.7.7) before the
@@ -32,6 +52,21 @@ of the kernel's crypto drivers encrypts the IPsec tunnels the host carries itsel
   written through OPNsense's own Tunables, so it is visible in System: Settings: Tunables), so from
   the next boot every session is ossl's.
 
+**ossl only** is refused where ossl has no AES-GCM (since 2026-10-29): a processor without AES-NI, or
+with it but without AVX, PCLMULQDQ and MOVBE (or VAES with AVX-512) - an Atom or a Celeron of the
+kind many firewalls have. There ossl takes no AES-GCM session at all (`ossl_x86.c`), and with aesni
+switched off every one, IPsec's usual cipher, would go to the kernel's plain software. The setting
+is refused when it is saved and again when it is applied, and the processor card warns. A processor
+whose features `/var/run/dmesg.boot` does not name is not judged.
+
+**ossl only** switches aesni off for every user of the kernel's crypto, not for IPsec alone. ossl
+takes AES-CBC, AES-GCM and ChaCha20, alone or with Poly1305, and no other cipher - read in `ossl.c`
+(`ossl_lookup_cipher()`, `ossl_probesession()`, opnsense/src stable/26.7), not measured - so with
+aesni off, AES-XTS (GELI's disk encryption), AES-CCM and AES-ICM (AES-CTR) go to the kernel's plain
+software. The other way round, ossl takes ChaCha20-Poly1305 and aesni does not, so with ossl loaded,
+beside aesni or alone, an SA with that cipher goes to ossl rather than to the plain software - read
+the same way, not measured.
+
 The page shows the host's processor and the features AES-GCM depends on, which AES-GCM code ossl
 takes there, the providers present, whether IPsec is held to software providers, and the SAs in the
 kernel with their algorithms.
@@ -42,7 +77,11 @@ once. The XGS 3300's host, an AMD Ryzen Embedded V1780B, has AVX, PCLMULQDQ and 
 so ossl would take the second.
 
 ~~a faster software path for the IPsec associations left to the host~~ - written as the choice of
-provider above; whether ossl is faster than aesni on these hosts, and by how much, is not measured yet.
+provider above; ~~whether ossl is faster than aesni on these hosts, and by how much, is not measured
+yet~~ measured in qemu on 2026-10-29 (see [What is tested](#what-is-tested)): ossl's AES-GCM encrypt
+took about a quarter less time a request than aesni's, and with 9000-byte frames, where the crypto
+set the limit, ossl carried about a fifth more through ESP with four streams, about as much with
+one. Not yet on an XGS host.
 No new crypto driver was needed for this step: OpenSSL's code is already in the kernel as ossl.
 
 ~~a page, in the XGS section of OPNsense's menu or as a plugin of its own - not decided yet~~ - a
@@ -159,6 +198,12 @@ which a single machine in qemu does not have.~~ A second machine was added. Stil
 up by OPNsense's IPsec (IKE) on ossl~~ (on 2026-10-29 in qemu, above), ~~and the throughput where a
 provider, not the path, is the limit~~ (with 9000-byte frames, on 2026-10-29 in qemu, above).
 
+Written on 2026-10-29 and not yet run on an OPNsense: "ossl only" refused where ossl has no AES-GCM,
+on the page and by apply; a failed kldload failing the apply; the reboot and the Next boot card's
+three states read from kenv and ossl; an SA behind NAT listed with its own algorithms; apply's
+steps put into words by the page; the removal taking the plugin's own Tunables row with it, and an
+install applying the saved setting again.
+
 ## Installation
 
 It is not in the OPNsense plugin repository, so there is no `pkg install os-fallbackcrypto`.
@@ -172,24 +217,31 @@ sh install/install.sh
 It copies `src/` onto `/usr/local` (the early boot hook with it), checks the PHP with `php -l` and
 the Python with `py_compile`, puts the page in the menu (`place-menu.sh`: XGS with os-xgs-npu,
 VPN: IPsec without) and records the commit for the self-update. Safe to run again: the settings in
-config.xml are kept. Nothing changes until a provider is chosen and applied. Before
+config.xml are kept. Nothing changes until a provider is chosen and applied~~. Before
 `sh install/uninstall.sh`, set it back to "aesni only" and apply, or remove `hint.aesni.0.disabled`
-from System: Settings: Tunables afterwards.
+from System: Settings: Tunables afterwards.~~ - or, where config.xml holds "ossl beside aesni" or
+"ossl only" from an earlier install, until the installer applies it again at its end (since
+2026-10-29). `sh install/uninstall.sh` takes the `hint.aesni.0.disabled` row the "only" setting
+wrote with the files and writes loader.conf again, so aesni is back at the next boot; a row of that
+name written by hand stays, and it says so. The settings stay in config.xml.
 
 **From a release's package.** A release carries `os-fallbackcrypto-<version>.pkg` and `SHA256SUMS`,
-built by `tools/make-package.sh` in the release workflow; installing it has not been tested yet.
+built by `tools/make-package.sh` in the release workflow; ~~installing it has not been tested yet~~ -
+added with pkg on a plain OPNsense 26.7 in qemu on 2026-10-29 (see [What is tested](#what-is-tested)).
 Check it and read it before adding it, as root:
 
 ```sh
 sha256sum -c SHA256SUMS
-pkg info -lF os-fallbackcrypto-1.0.0.pkg      # every file it will write
-pkg add os-fallbackcrypto-1.0.0.pkg
+pkg info -lF os-fallbackcrypto-*.pkg       # every file it will write
+pkg add os-fallbackcrypto-*.pkg
 ```
 
 `pkg delete os-fallbackcrypto` leaves ossl loaded until the next boot, which no longer loads it, and
-keeps the settings and a `hint.aesni.0.disabled` row in Tunables if one was written - it says so
-when it does. The same package is built on the firewall from a checkout with
-`sh tools/make-package.sh -o /tmp`.
+keeps the settings~~ and a `hint.aesni.0.disabled` row in Tunables if one was written - it says so
+when it does~~; the `hint.aesni.0.disabled` row the "only" setting wrote goes with it, as with
+`uninstall.sh`, and one written by hand stays, with a note (since 2026-10-29). Adding the package
+again, or over itself with `pkg add -f`, applies a saved "ossl beside aesni" or "ossl only" again.
+The same package is built on the firewall from a checkout with `sh tools/make-package.sh -o /tmp`.
 
 ## Updates
 

@@ -6,7 +6,8 @@
 # Install the Fallback Crypto plugin from a copy of this repository on the firewall:
 #   sh install/install.sh
 # Safe to run again after an update: settings in config.xml are kept. Nothing changes until a provider
-# is chosen on the page and applied.
+# is chosen on the page and applied - or, where config.xml holds one from an earlier install, until
+# the end of this script, which applies it again.
 
 set -e
 HERE=$(cd "$(dirname "$0")/.." && pwd)
@@ -52,6 +53,20 @@ case ${REV} in *[!0-9a-f]*) REV=; RDATE=; RSRC=unknown ;; esac
 install -d -m 0755 /usr/local/share/os-fallbackcrypto
 printf '{"commit": "%s", "date": "%s", "source": "%s", "installed_at": %s}\n' \
     "${REV}" "${RDATE}" "${RSRC}" "$(date +%s)" > /usr/local/share/os-fallbackcrypto/installed.json
+
+# The setting applied again where it wants ossl (2026-10-29). A removal takes the Tunables row the
+# "only" setting wrote with it and leaves the setting in config.xml, so an install after one comes
+# back to where the setting says: ossl loaded, and for "only" the row written again. On an update
+# apply.php finds all of it so already and changes nothing. Its answer is printed; a failure there
+# does not undo the install.
+MODE=$(sed -n '/<FallbackCrypto[ >]/,/<\/FallbackCrypto>/s:.*<mode>\([a-z]*\)</mode>.*:\1:p' \
+    /conf/config.xml 2>/dev/null | head -1)
+case ${MODE} in
+alongside|only)
+    echo "Fallback Crypto: applying the setting saved in config.xml (${MODE})"
+    /usr/local/opnsense/scripts/fallbackcrypto/apply.php || echo "Fallback Crypto: the setting could not be applied; apply it on the page"
+    ;;
+esac
 
 if [ "${WHERE}" = xgs ]; then
     echo "Fallback Crypto installed: XGS > Fallback Crypto"

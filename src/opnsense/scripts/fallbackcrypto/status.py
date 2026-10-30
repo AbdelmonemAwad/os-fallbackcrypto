@@ -24,6 +24,13 @@ CONFIG = '/conf/config.xml'
 DMESG = '/var/run/dmesg.boot'
 FEATURES = ('AESNI', 'PCLMULQDQ', 'AVX', 'MOVBE', 'AVX2', 'SHA', 'AVX512F', 'VAES', 'VPCLMULQDQ')
 PROVIDERS = ('aesni', 'ossl', 'ccp', 'qat', 'armv8crypto', 'safexcel')
+# The first line setkey -D prints for an SA: its two addresses, at the margin, each followed by its
+# port in brackets when the SA is carried in UDP for NAT traversal - "198.51.100.1[4500]
+# 203.0.113.5[4500]" (lib/libipsec/pfkey_dump.c, opnsense/src stable/26.7). An IPv6 address may
+# carry its scope ("%igb0"). Every other line of an SA is indented, and "No SAD entries.", the one
+# other line at the margin, has three words.
+ADDRESS = r'[0-9A-Fa-f:.]+(?:%[^\s\[\]]+)?(?:\[\d+\])?'
+SA_HEADER = re.compile(r'^' + ADDRESS + ' ' + ADDRESS + r'\s*$')
 
 
 def run(args):
@@ -41,20 +48,31 @@ def loaded(module):
 
 
 def processor():
+    """The processor's name, and its features as the kernel printed them at boot - None when
+    dmesg.boot has no Features2 line, as when the message buffer wrapped before it was kept. Until
+    2026-10-29 every feature then read as absent, and a processor that could not be read was taken
+    for one without AES-NI."""
     try:
         text = open(DMESG, encoding='utf-8', errors='replace').read()
     except OSError:
         text = ''
     model = re.search(r'CPU: (.+?)\s+\(', text)
+    name = model.group(1).strip() if model else run(['/sbin/sysctl', '-n', 'hw.model']).strip()
+    # Not anchored to the start of a line: 26.7's kernel begins every boot line with [n], the CPU
+    # that printed it (seen on 2026-10-29), and an anchored pattern read every processor as unknown.
+    if not re.search(r'Features2=0x[0-9a-f]+<', text):
+        return name, None
     flags = set()
     for line in re.findall(r'(?:Features2?|Structured Extended Features\d?|AMD Features2?)=0x[0-9a-f]+<([^>]*)>', text):
         flags.update(line.split(','))
-    return (model.group(1).strip() if model else run(['/sbin/sysctl', '-n', 'hw.model']).strip(),
-            {f: f in flags for f in FEATURES})
+    return name, {f: f in flags for f in FEATURES}
 
 
 def gcm_path(f):
-    """Which AES-GCM ossl's ossl_x86.c takes on this processor (opnsense/src stable/26.7)."""
+    """Which AES-GCM ossl's ossl_x86.c takes on this processor (opnsense/src stable/26.7); the model's
+    osslGcm() applies the same rule to refuse "ossl only" where the answer is 'none'."""
+    if f is None:
+        return 'unknown'
     if not f['AESNI']:
         return 'none'
     if f['VAES'] and f['VPCLMULQDQ'] and f['AVX512F']:
@@ -65,13 +83,21 @@ def gcm_path(f):
 
 
 def sas():
-    """The SAs in the kernel's database, each with its encryption and authentication."""
+    """The SAs in the kernel's database, each with its encryption and authentication.
+
+    Until 2026-10-29 the first line had to be two bare addresses, so an SA behind NAT - its ports in
+    brackets - was not counted, and its E: and A: lines were read into the SA listed before it."""
     out = []
     current = None
     for line in run(['/sbin/setkey', '-D']).splitlines():
-        if line and not line[0].isspace() and re.match(r'^[0-9a-fA-F:.]+ [0-9a-fA-F:.]+$', line.strip()):
-            current = {'pair': line.strip(), 'enc': '', 'auth': ''}
-            out.append(current)
+        if not line.strip():
+            continue
+        if not line[0].isspace():
+            # A new SA, or a line that is none; either way what follows is not the previous SA's.
+            current = None
+            if SA_HEADER.match(line):
+                current = {'pair': line.strip(), 'enc': '', 'auth': ''}
+                out.append(current)
         elif current is not None:
             enc = re.search(r'^\s*E: (\S+)', line)
             auth = re.search(r'^\s*A: (\S+)', line)
@@ -87,7 +113,10 @@ def main():
     try:
         root = ET.parse(CONFIG).getroot()
         mode = root.findtext('OPNsense/FallbackCrypto/general/mode') or 'off'
+        # A row switches aesni off only with the value 1; until 2026-10-29 any row named so counted,
+        # one set to 0 by hand among them.
         tunable = any((item.findtext('tunable') or '') == 'hint.aesni.0.disabled'
+                      and (item.findtext('value') or '').strip() == '1'
                       for item in root.findall('sysctl/item'))
     except (OSError, ET.ParseError):
         mode, tunable = 'off', False
@@ -99,7 +128,7 @@ def main():
     support = run(['/sbin/sysctl', '-n', 'net.inet.ipsec.crypto_support']).strip()
     print(json.dumps({
         'processor': model,
-        'features': features,
+        'features': features or {},
         'ossl_gcm': gcm_path(features),
         'ossl_available': os.path.exists('/boot/kernel/ossl.ko'),
         'ossl_loaded': loaded('ossl'),

@@ -11,7 +11,7 @@
     -->
     <VPN>
         <IPsec>
-            <FallbackCrypto order="900" VisibleName="Fallback Crypto" url="/ui/fallbackcrypto"/>
+            <FallbackCrypto order="900" VisibleName="Fallback Crypto" cssClass="fa fa-key fa-fw" url="/ui/fallbackcrypto"/>
         </IPsec>
     </VPN>
 </menu>

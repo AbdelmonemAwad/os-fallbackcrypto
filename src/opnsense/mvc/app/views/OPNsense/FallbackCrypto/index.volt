@@ -63,29 +63,62 @@
         const gcm = {
             'avx512': "{{ lang._('ossl: AES-GCM with AVX-512 and VAES') }}",
             'avx': "{{ lang._('ossl: AES-GCM with AVX, PCLMULQDQ and MOVBE') }}",
-            'none': "{{ lang._('ossl has no fast AES-GCM on this processor') }}"
+            'none': "{{ lang._('ossl: no AES-GCM here') }}",
+            'unknown': "{{ lang._('Features unknown') }}"
+        };
+
+        /* apply.php's steps arrive as codes and are put into words here, so they are in the page's
+           language (2026-10-29); a code this page does not know is shown as it came. */
+        const said = {
+            'no_ossl_module': "{{ lang._('No ossl module in this kernel') }}",
+            'no_aes_gcm': "{{ lang._('ossl has no AES-GCM on this processor (it needs AES-NI with AVX, PCLMULQDQ and MOVBE), so it cannot replace aesni.') }}",
+            'ossl_loaded': "{{ lang._('ossl loaded') }}",
+            'ossl_not_loaded': "{{ lang._('ossl could not be loaded') }}",
+            'ossl_stays': "{{ lang._('ossl stays loaded until next boot') }}",
+            'hint_written': "{{ lang._('hint.aesni.0.disabled=1: aesni off from next boot') }}",
+            'hint_removed': "{{ lang._('hint.aesni.0.disabled removed: aesni back at next boot') }}",
+            'tunable_refused': "{{ lang._('Tunable refused') }}",
+            'loader_written': "{{ lang._('loader.conf written') }}"
         };
 
         function draw(data) {
             const $cards = $('#fc-cards').empty();
             if (!data || data.error) {
-                $cards.append(card('bad', 'fa-lock', "{{ lang._('Fallback Crypto') }}", "{{ lang._('The status could not be read.') }}", ''));
+                $cards.append(card('bad', 'fa-lock', "{{ lang._('Fallback Crypto') }}", "{{ lang._('Status unreadable') }}", ''));
                 return;
             }
-            $cards.append(card(data.ossl_gcm === 'none' ? '' : 'ok', 'fa-microchip', "{{ lang._('Processor') }}",
-                data.processor, gcm[data.ossl_gcm]));
+            /* A warning where ossl has no AES-GCM, which is also where "ossl only" is refused, or
+               where there is no AES-NI and neither driver does AES; no judgement where dmesg.boot
+               names no features (2026-10-29). Before, such a processor had a grey card. */
+            const cpu = data.ossl_gcm === 'none' ? 'warn' : (data.ossl_gcm === 'unknown' ? '' : 'ok');
+            $cards.append(card(cpu, 'fa-microchip', "{{ lang._('Processor') }}", data.processor,
+                data.ossl_gcm === 'none' && !data.features.AESNI ? "{{ lang._('No AES-NI') }}" : gcm[data.ossl_gcm]));
             const names = Object.keys(data.providers);
             $cards.append(card(names.length ? 'ok' : 'warn', 'fa-cubes', "{{ lang._('Crypto providers') }}",
                 names.length ? names.join(', ') : "{{ lang._('none') }}",
                 data.software_only ? "{{ lang._('IPsec held to software providers') }}" : ''));
             const algos = {};
             data.sas.forEach(function (s) { algos[s.enc || '-'] = (algos[s.enc || '-'] || 0) + 1; });
-            $cards.append(card('', 'fa-exchange', "{{ lang._('IPsec SAs in the kernel') }}", String(data.sas.length),
+            $cards.append(card('', 'fa-exchange', "{{ lang._('IPsec SAs') }}", String(data.sas.length),
                 Object.keys(algos).map(function (a) { return a + ' ' + algos[a]; }).join(', ')));
-            const pending = (data.mode === 'only') !== !!data.aesni_disabled_now;
-            $cards.append(card(pending ? 'warn' : 'ok', 'fa-power-off', "{{ lang._('Next boot') }}",
+            /* The setting against what runs (2026-10-29). Applied: ossl loaded where the setting wants
+               it, and the loader line written exactly where it wants aesni off. Then in effect, or
+               waiting for the boot that switches aesni off or on again, or that leaves out an ossl no
+               longer wanted - loaded, it keeps taking a share of the new sessions. Until then only
+               aesni at this boot was compared, and a setting saved but never applied, or "aesni only"
+               with ossl still loaded, read as in effect. */
+            const wants_ossl = data.mode === 'alongside' || data.mode === 'only';
+            const wants_off = data.mode === 'only';
+            let state = 'effect';
+            if ((wants_ossl && !data.ossl_loaded) || wants_off !== !!data.aesni_disabled_next_boot) {
+                state = 'apply';
+            } else if (wants_off !== !!data.aesni_disabled_now || (!wants_ossl && data.ossl_loaded)) {
+                state = 'reboot';
+            }
+            $cards.append(card(state === 'effect' ? 'ok' : 'warn', 'fa-power-off', "{{ lang._('Next boot') }}",
                 data.mode === 'only' ? "{{ lang._('ossl only') }}" : (data.mode === 'alongside' ? "{{ lang._('ossl beside aesni') }}" : "{{ lang._('aesni only') }}"),
-                pending ? "{{ lang._('a reboot is needed for the rest') }}" : "{{ lang._('as it runs now') }}"));
+                {'apply': "{{ lang._('Apply needed') }}", 'reboot': "{{ lang._('Reboot needed') }}",
+                    'effect': "{{ lang._('In effect') }}"}[state]));
             $('#fc-noossl').toggle(!data.ossl_available);
 
             const $f = $('#fc-features tbody').empty();
@@ -93,13 +126,16 @@
                 $f.append($('<tr/>').append($('<td/>').append($('<code/>').text(k)))
                     .append($('<td/>').text(data.features[k] ? "{{ lang._('yes') }}" : "{{ lang._('no') }}")));
             });
+            if (!Object.keys(data.features).length) {
+                $f.append($('<tr/>').append($('<td colspan="2" class="text-muted"/>').text(plain("{{ lang._('Features unknown') }}"))));
+            }
             const $s = $('#fc-sas tbody').empty();
             data.sas.forEach(function (s) {
                 $s.append($('<tr/>').append($('<td/>').append($('<code/>').text(s.pair)))
                     .append($('<td/>').text(s.enc)).append($('<td/>').text(s.auth)));
             });
             if (!data.sas.length) {
-                $s.append($('<tr/>').append($('<td colspan="3" class="text-muted"/>').text("{{ lang._('The kernel holds no IPsec SA now.') }}")));
+                $s.append($('<tr/>').append($('<td colspan="3" class="text-muted"/>').text(plain("{{ lang._('No IPsec SAs') }}"))));
             }
         }
 
@@ -112,7 +148,7 @@
             $('.selectpicker').selectpicker('refresh');
         });
         cards_wait('#fc-cards', ["{{ lang._('Processor') }}", "{{ lang._('Crypto providers') }}",
-            "{{ lang._('IPsec SAs in the kernel') }}", "{{ lang._('Next boot') }}"]);
+            "{{ lang._('IPsec SAs') }}", "{{ lang._('Next boot') }}"]);
         refresh();
 
         $('#refreshAct').click(function () {
@@ -129,8 +165,16 @@
             saveFormToEndpoint('/api/fallbackcrypto/settings/set', 'frm_general', function () {
                 ajaxCall('/api/fallbackcrypto/service/apply', {}, function (data) {
                     done();
+                    const words = (data && data.steps ? data.steps : []).map(function (code) {
+                        return plain(said[code] || code);
+                    });
+                    /* the system's own words for a step that failed (kldload's, the Tunables model's),
+                       and the API's when there was no answer to read */
+                    if (data && (data.detail || data.error)) {
+                        words.push(plain(data.detail || data.error));
+                    }
                     $('#fc-result').attr('class', data && data.status === 'ok' ? 'alert alert-success' : 'alert alert-danger')
-                        .text(data && data.steps ? data.steps.join(' · ') : '').show();
+                        .text(words.join(' · ')).show();
                     $('#fc-reboot').toggle(!!(data && data.reboot));
                     refresh();
                 });
@@ -145,7 +189,7 @@
 </div>
 
 <div id="fc-noossl" class="alert alert-warning" role="alert" style="display: none;">
-    {{ lang._('This kernel has no ossl module, so only aesni can be used.') }}
+    {{ lang._('No ossl module in this kernel') }}
 </div>
 
 <div class="content-box">
@@ -153,7 +197,7 @@
     <div style="clear: both; padding: 0 15px 15px;">
         <div id="fc-result" style="display: none;"></div>
         <div id="fc-reboot" class="alert alert-warning" role="alert" style="display: none;">
-            {{ lang._('The rest takes effect at the next reboot (Power: Reboot).') }}
+            {{ lang._('Reboot to finish (Power: Reboot)') }}
         </div>
     </div>
 </div>

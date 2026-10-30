@@ -9,6 +9,15 @@ algorithms.
 Plugin Changelog
 ================
 
+1.0.1
+
+* "ossl only" refused where ossl has no AES-GCM, as aesni off would leave IPsec to plain software
+* the page says Apply needed, Reboot needed or In effect from what runs, and apply's steps in the page's language
+* a failed kldload fails the apply and writes nothing
+* removal takes the plugin's own tunable row; an install applies the saved setting again
+* an SA behind NAT counted, with its own algorithms; processor features read on 26.7
+* the page's menu entry carries an icon in the XGS section, and a Font Awesome 6 one in its own
+
 1.0.0
 
 * Initial release

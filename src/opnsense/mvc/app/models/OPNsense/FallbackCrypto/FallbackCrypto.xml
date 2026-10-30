@@ -13,9 +13,9 @@
                 <Required>Y</Required>
                 <Default>off</Default>
                 <OptionValues>
-                    <off>aesni only, as OPNsense ships</off>
+                    <off>aesni only (default)</off>
                     <alongside>ossl beside aesni</alongside>
-                    <only>ossl only (aesni off from the next boot)</only>
+                    <only>ossl only (after reboot)</only>
                 </OptionValues>
             </mode>
         </general>
