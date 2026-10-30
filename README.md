@@ -1,21 +1,24 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/banner-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="docs/images/readme/banner-light.svg">
-  <img src="docs/images/readme/banner-light.svg" alt="os-fallbackcrypto - IPsec on the processor's own crypto: aesni, ossl, or both" width="100%">
+  <img src="docs/images/readme/banner-light.svg" alt="os-fallbackcrypto - IPsec on the processor’s own crypto: aesni, ossl, or both" width="100%">
 </picture>
 
+<p align="center">
+  <a href="https://github.com/AbdelmonemAwad/os-fallbackcrypto/releases/latest"><img alt="the newest release" src="https://img.shields.io/github/v/release/AbdelmonemAwad/os-fallbackcrypto?sort=semver&amp;style=flat-square&amp;label=release&amp;color=8250df"></a>
+  <a href="https://github.com/AbdelmonemAwad/os-fallbackcrypto/actions/workflows/checks.yml"><img alt="checks on main" src="https://img.shields.io/github/actions/workflow/status/AbdelmonemAwad/os-fallbackcrypto/checks.yml?branch=main&amp;style=flat-square&amp;label=checks"></a>
+  <a href="LICENSE"><img alt="licence: BSD-2-Clause" src="https://img.shields.io/badge/licence-BSD--2--Clause-blue.svg?style=flat-square"></a>
+  <a href="#what-is-tested"><img alt="OPNsense 26.7" src="https://img.shields.io/badge/OPNsense-26.7-d94f00.svg?style=flat-square"></a>
+  <a href="https://github.com/AbdelmonemAwad/opnsense-arabic"><img alt="the page in English and in Arabic" src="https://img.shields.io/badge/GUI-English%20%C2%B7%20Arabic-2da44e.svg?style=flat-square"></a>
+  <a href="https://github.com/AbdelmonemAwad/os-xgs-npu"><img alt="part of os-xgs-npu" src="https://img.shields.io/badge/part%20of-os--xgs--npu-9a6700.svg?style=flat-square"></a>
+  <br>
+  <a href="#what-is-tested"><img alt="AES-GCM encrypt: ossl 1960-2069 · aesni 2610-2798 ns" src="https://img.shields.io/badge/AES--GCM%20encrypt-ossl%201960--2069%20%C2%B7%20aesni%202610--2798%20ns-brightgreen.svg?style=flat-square"></a>
+  <a href="#what-is-tested"><img alt="ESP, 9000 B, 4 streams: ossl 4636-4749 · aesni 3846-3957 Mbit/s" src="https://img.shields.io/badge/ESP%2C%209000%20B%2C%204%20streams-ossl%204636--4749%20%C2%B7%20aesni%203846--3957%20Mbit%2Fs-brightgreen.svg?style=flat-square"></a>
+  <a href="#what-is-tested"><img alt="IPsec tunnel: on ossl from the boot" src="https://img.shields.io/badge/IPsec%20tunnel-on%20ossl%20from%20the%20boot-brightgreen.svg?style=flat-square"></a>
+  <a href="#what-is-tested"><img alt="XGS host: not measured yet" src="https://img.shields.io/badge/XGS%20host-not%20measured%20yet-lightgrey.svg?style=flat-square"></a>
+</p>
+
 # Fallback Crypto for OPNsense
-
-[![release](https://img.shields.io/github/v/release/AbdelmonemAwad/os-fallbackcrypto?sort=semver&style=flat-square&color=555555)](https://github.com/AbdelmonemAwad/os-fallbackcrypto/releases/latest)
-[![checks](https://github.com/AbdelmonemAwad/os-fallbackcrypto/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/AbdelmonemAwad/os-fallbackcrypto/actions/workflows/checks.yml)
-[![licence: BSD-2-Clause](https://img.shields.io/badge/licence-BSD--2--Clause-blue.svg?style=flat-square)](LICENSE)
-[![OPNsense 26.7](https://img.shields.io/badge/OPNsense-26.7-d94f00.svg?style=flat-square)](#what-is-tested)
-[![part of os-xgs-npu](https://img.shields.io/badge/part%20of-os--xgs--npu-9a6700.svg?style=flat-square)](https://github.com/AbdelmonemAwad/os-xgs-npu)
-
-[![AES-GCM encrypt: ossl 1960-2069 · aesni 2610-2798 ns](https://img.shields.io/badge/AES--GCM%20encrypt-ossl%201960--2069%20%C2%B7%20aesni%202610--2798%20ns-brightgreen.svg?style=flat-square)](#what-is-tested)
-[![ESP, 9000 B, 4 streams: ossl 4636-4749 · aesni 3846-3957 Mbit/s](https://img.shields.io/badge/ESP%2C%209000%20B%2C%204%20streams-ossl%204636--4749%20%C2%B7%20aesni%203846--3957%20Mbit%2Fs-brightgreen.svg?style=flat-square)](#what-is-tested)
-[![IPsec tunnel: on ossl from the boot](https://img.shields.io/badge/IPsec%20tunnel-on%20ossl%20from%20the%20boot-brightgreen.svg?style=flat-square)](#what-is-tested)
-[![XGS host: not measured yet](https://img.shields.io/badge/XGS%20host-not%20measured%20yet-lightgrey.svg?style=flat-square)](#what-is-tested)
 
 IPsec encryption accelerated on the host's processor, for the tunnels a Sophos XGS's coprocessor does not take.
 
@@ -27,8 +30,9 @@ IPsec encryption accelerated on the host's processor, for the tunnels a Sophos X
 > for IPsec. There is no release, it has not been installed on an appliance, and nothing has been
 > measured through a tunnel yet. What was run is listed under [What is tested](#what-is-tested).~~
 >
-> **1.0.1 (2026-10-30):** "ossl only" refused where ossl has no AES-GCM, the page's state read from what runs, a removal that takes the plugin's own loader line, and SAs behind NAT counted. Tested in qemu on OPNsense 26.7.7 before the release; see
-> [What is tested](#what-is-tested).
+> **1.0.1 (2026-10-30):** "ossl only" refused where ossl has no AES-GCM, the page's state read from what runs, a removal that takes the plugin's own loader line, and SAs behind NAT counted. ~~Tested in qemu on OPNsense 26.7.7 before the release; see~~ Tested in part before the
+> release, in qemu on OPNsense 26.7.7 from the branch that became it; what ran and what did not
+> is under [What is tested](#what-is-tested).
 >
 > **1.0.0, the first release (2026-10-25): the first part**, the choice of the kernel's crypto
 > provider for IPsec. Installed and its page opened on an XGS 3300 (OPNsense 26.7.7) before the
@@ -37,6 +41,8 @@ IPsec encryption accelerated on the host's processor, for the tunnels a Sophos X
 > associations, and through an IPsec tunnel, on each provider (see [What is tested](#what-is-tested)).
 > Updated from XGS: Updates when os-xgs-npu is installed, or by its own self-update - see
 > [Updates](#updates).
+
+<p align="center"><b>Contents:</b> <a href="#what-it-does">What it does</a> &middot; <a href="#beside-os-xgs-npu">Beside os-xgs-npu</a> &middot; <a href="#what-is-tested">What is tested</a> &middot; <a href="#installation">Installation</a> &middot; <a href="#updates">Updates</a> &middot; <a href="#where-it-fits">Where it fits</a> &middot; <a href="#licence">Licence</a></p>
 
 ## What it does
 
@@ -130,7 +136,8 @@ an Intel Xeon Gold 6252 host. Each mode was set through the plugin's model and a
   `hint.aesni.0.disabled removed`. After the reboot the hint was gone, aesni was back, ossl was not
   loaded, and aesni was the only provider again.
 
-On two such machines in qemu, 2026-10-29, the second a copy of the first, joined by a cable of
+On two ~~such~~ machines in qemu, 2026-10-29, plain OPNsense 26.7.7 - the first updated from 26.7 -
+the second a copy of the first, joined by a cable of
 their own (a virtio NIC each, on a Linux bridge of the host). Two ESP associations were keyed by
 hand with `setkey`, AES-GCM with a 256-bit key in transport mode, one each way: not a tunnel set up
 by OPNsense's IPsec, but the same kind of SA in the kernel, so the same choice of provider. Both
@@ -198,11 +205,30 @@ which a single machine in qemu does not have.~~ A second machine was added. Stil
 up by OPNsense's IPsec (IKE) on ossl~~ (on 2026-10-29 in qemu, above), ~~and the throughput where a
 provider, not the path, is the limit~~ (with 9000-byte frames, on 2026-10-29 in qemu, above).
 
-Written on 2026-10-29 and not yet run on an OPNsense: "ossl only" refused where ossl has no AES-GCM,
+Written on 2026-10-29 and ~~not yet run on an OPNsense~~ run in part that evening, below: "ossl only"
+refused where ossl has no AES-GCM,
 on the page and by apply; a failed kldload failing the apply; the reboot and the Next boot card's
 three states read from kenv and ossl; an SA behind NAT listed with its own algorithms; apply's
 steps put into words by the page; the removal taking the plugin's own Tunables row with it, and an
 install applying the saved setting again.
+
+1.0.1's branch, run on 2026-10-29 in qemu on OPNsense 26.7.7, before its release commit:
+
+- **"ossl only" refused.** On a processor made to read as one without AVX (its `dmesg.boot` edited),
+  the model refused the change - `ossl has no AES-GCM on this processor` - and apply answered
+  `{"status":"failed","steps":["no_aes_gcm"],"reboot":false}`. That run found a fault, fixed before
+  the release: on 26.7 every boot line starts with a counter, `[1]`, so the processor's features
+  read as unknown and nothing was refused; they are read wherever the line puts them since.
+- **The three states**, as the page computes them: Apply needed before an apply, Reboot needed after
+  it (`{"status":"ok","steps":["ossl_stays"],"reboot":true}`), and In effect after the reboot, with
+  ossl the only provider and its AES-GCM on AVX. The Next boot card itself was seen on the XGS 3300,
+  in one state, In effect.
+- **The removal and the install**, by the script and by the package: the removal took the plugin's
+  Tunables row and its loader line with it, with no PHP error, and an install wrote the saved setting
+  again.
+
+Still not tested: a failed kldload failing the apply, an SA behind NAT, and apply's steps put into
+words by the page.
 
 ## Installation
 
@@ -266,13 +292,15 @@ reaches an installed firewall when it is released, not before.
 - `self-update.py check` says what it would do and changes nothing.
 
 ~~Not tested yet: an update taken this way - 1.0.0 is the first release, so none has been ahead of
-an installed copy.~~ Tested on 2026-10-29 on a plain OPNsense 26.7 in qemu, where the package had
+an installed copy.~~ Tested on 2026-10-29 on a plain OPNsense ~~26.7~~ 26.7.7 in qemu, where the package had
 been added with pkg, which records no commit: `self-update.py check` found the release `v1.0.0`
 (2dcbb8c9a820) and nothing installed to compare it with, so to be taken. `self-update.py` fetched
 its source, ran its `install/install.sh` and answered `updated to v1.0.0 (2dcbb8c9a820)`, which the
 system log has too. `installed.json` then recorded that commit, from the stamp, and a second check
-found it identical: nothing to take. Not yet: a release ahead of the one installed - 1.0.0 is
-still the only release.
+found it identical: nothing to take. ~~Not yet: a release ahead of the one installed - 1.0.0 is
+still the only release.~~ Taken on 2026-10-30, on an XGS 3300 with OPNsense 26.7.7: with 1.0.0
+installed, `self-update.py`, run over SSH, answered `updated to v1.0.1 (c68414407d80)`, the system
+log carries the same line, and `installed.json` recorded that commit.
 
 ## Where it fits
 
