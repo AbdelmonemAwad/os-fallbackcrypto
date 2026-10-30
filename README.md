@@ -30,8 +30,9 @@ IPsec encryption accelerated on the host's processor, for the tunnels a Sophos X
 > for IPsec. There is no release, it has not been installed on an appliance, and nothing has been
 > measured through a tunnel yet. What was run is listed under [What is tested](#what-is-tested).~~
 >
-> **1.0.1 (2026-10-30):** "ossl only" refused where ossl has no AES-GCM, the page's state read from what runs, a removal that takes the plugin's own loader line, and SAs behind NAT counted. Tested in qemu on OPNsense 26.7.7 before the release; see
-> [What is tested](#what-is-tested).
+> **1.0.1 (2026-10-30):** "ossl only" refused where ossl has no AES-GCM, the page's state read from what runs, a removal that takes the plugin's own loader line, and SAs behind NAT counted. ~~Tested in qemu on OPNsense 26.7.7 before the release; see~~ Tested in part before the
+> release, in qemu on OPNsense 26.7.7 from the branch that became it; what ran and what did not
+> is under [What is tested](#what-is-tested).
 >
 > **1.0.0, the first release (2026-10-25): the first part**, the choice of the kernel's crypto
 > provider for IPsec. Installed and its page opened on an XGS 3300 (OPNsense 26.7.7) before the
@@ -135,7 +136,8 @@ an Intel Xeon Gold 6252 host. Each mode was set through the plugin's model and a
   `hint.aesni.0.disabled removed`. After the reboot the hint was gone, aesni was back, ossl was not
   loaded, and aesni was the only provider again.
 
-On two such machines in qemu, 2026-10-29, the second a copy of the first, joined by a cable of
+On two ~~such~~ machines in qemu, 2026-10-29, plain OPNsense 26.7.7 - the first updated from 26.7 -
+the second a copy of the first, joined by a cable of
 their own (a virtio NIC each, on a Linux bridge of the host). Two ESP associations were keyed by
 hand with `setkey`, AES-GCM with a 256-bit key in transport mode, one each way: not a tunnel set up
 by OPNsense's IPsec, but the same kind of SA in the kernel, so the same choice of provider. Both
@@ -203,11 +205,30 @@ which a single machine in qemu does not have.~~ A second machine was added. Stil
 up by OPNsense's IPsec (IKE) on ossl~~ (on 2026-10-29 in qemu, above), ~~and the throughput where a
 provider, not the path, is the limit~~ (with 9000-byte frames, on 2026-10-29 in qemu, above).
 
-Written on 2026-10-29 and not yet run on an OPNsense: "ossl only" refused where ossl has no AES-GCM,
+Written on 2026-10-29 and ~~not yet run on an OPNsense~~ run in part that evening, below: "ossl only"
+refused where ossl has no AES-GCM,
 on the page and by apply; a failed kldload failing the apply; the reboot and the Next boot card's
 three states read from kenv and ossl; an SA behind NAT listed with its own algorithms; apply's
 steps put into words by the page; the removal taking the plugin's own Tunables row with it, and an
 install applying the saved setting again.
+
+1.0.1's branch, run on 2026-10-29 in qemu on OPNsense 26.7.7, before its release commit:
+
+- **"ossl only" refused.** On a processor made to read as one without AVX (its `dmesg.boot` edited),
+  the model refused the change - `ossl has no AES-GCM on this processor` - and apply answered
+  `{"status":"failed","steps":["no_aes_gcm"],"reboot":false}`. That run found a fault, fixed before
+  the release: on 26.7 every boot line starts with a counter, `[1]`, so the processor's features
+  read as unknown and nothing was refused; they are read wherever the line puts them since.
+- **The three states**, as the page computes them: Apply needed before an apply, Reboot needed after
+  it (`{"status":"ok","steps":["ossl_stays"],"reboot":true}`), and In effect after the reboot, with
+  ossl the only provider and its AES-GCM on AVX. The Next boot card itself was seen on the XGS 3300,
+  in one state, In effect.
+- **The removal and the install**, by the script and by the package: the removal took the plugin's
+  Tunables row and its loader line with it, with no PHP error, and an install wrote the saved setting
+  again.
+
+Still not tested: a failed kldload failing the apply, an SA behind NAT, and apply's steps put into
+words by the page.
 
 ## Installation
 
@@ -271,7 +292,7 @@ reaches an installed firewall when it is released, not before.
 - `self-update.py check` says what it would do and changes nothing.
 
 ~~Not tested yet: an update taken this way - 1.0.0 is the first release, so none has been ahead of
-an installed copy.~~ Tested on 2026-10-29 on a plain OPNsense 26.7 in qemu, where the package had
+an installed copy.~~ Tested on 2026-10-29 on a plain OPNsense ~~26.7~~ 26.7.7 in qemu, where the package had
 been added with pkg, which records no commit: `self-update.py check` found the release `v1.0.0`
 (2dcbb8c9a820) and nothing installed to compare it with, so to be taken. `self-update.py` fetched
 its source, ran its `install/install.sh` and answered `updated to v1.0.0 (2dcbb8c9a820)`, which the
